@@ -38,6 +38,10 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
 
         $merchant_id = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '10000100' : $payment_gateway_plugin->getConfiguration()['merchant_id'];
         $merchant_key = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '46f0cd694581a' : $payment_gateway_plugin->getConfiguration()['merchant_key'];
+                
+        $orderId = $payment->getOrderId();
+        $order = \Drupal\commerce_order\Entity\Order::load( $orderId );
+
         $data = [
             'merchant_id' => $merchant_id,
             'merchant_key' => $merchant_key,
@@ -46,9 +50,24 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
             'notify_url' => $notifyUrl,
             'm_payment_id' => $payment->getOrderId(),
             'amount' => number_format( sprintf( "%.2f", $payment->getAmount()->getNumber() ), 2, '.', '' ),
-            'item_name' => 'Order ID: ' . $payment->getOrderId(),
-            'custom_int1' => $remote_id
+            'item_name' => 'Order ID: ' . $orderId
         ];
+        
+        foreach ( $order->getItems() as $order_item )
+        {          
+            $product = $order_item->getPurchasedEntity()->getProduct();
+
+            if( !is_null ( $product->field_subscription_type->value ) && !is_null ( $product->field_recurring_amount->value ) 
+                && !is_null ( $product->field_frequency->value ) && !is_null ( $product->field_cycles->value ) ) 
+            {
+                $data['custom_int1'] = $orderId;
+                $data['custom_str1'] = gmdate( 'Y-m-d' );
+                $data['subscription_type'] = $product->field_subscription_type->value;
+                $data['recurring_amount'] = number_format( sprintf( "%.2f", $product->field_recurring_amount->value ), 2, '.', '' );
+                $data['frequency'] = $product->field_frequency->value;
+                $data['cycles'] = $product->field_cycles->value;
+            }
+        }  
 
         $pfOutput = '';
         // Create output string
