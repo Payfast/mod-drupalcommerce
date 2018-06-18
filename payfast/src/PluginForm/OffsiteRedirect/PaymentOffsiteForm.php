@@ -5,18 +5,18 @@ Except as expressly indicated in this licence, you may not use, copy, modify or 
  */
 namespace Drupal\commerce_payfast\PluginForm\OffsiteRedirect;
 
-use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Drupal\commerce_payment\PluginForm\PaymentOffsiteForm as BasePaymentOffsiteForm;
 use Drupal\Core\Form\FormStateInterface;
 
-
-class PaymentOffsiteForm extends BasePaymentOffsiteForm {
+class PaymentOffsiteForm extends BasePaymentOffsiteForm
+{
 
     /**
      * {@inheritdoc}
      */
-    public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-        $form = parent::buildConfigurationForm($form, $form_state);
+    public function buildConfigurationForm( array $form, FormStateInterface $form_state )
+    {
+        $form = parent::buildConfigurationForm( $form, $form_state );
 
         /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
         $payment = $this->entity;
@@ -28,16 +28,20 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
         $url = 'https://' . $mode . '.payfast.co.za/eng/process';
 
         $protocol = $_SERVER['SERVER_PROTOCOL'];
-        $protocolString = strtolower(substr($protocol, 0, strpos($protocol, '/')));
+        $protocolString = strtolower( substr( $protocol, 0, strpos( $protocol, '/' ) ) );
         $notifyUrl = $protocolString . '://' . $_SERVER['SERVER_NAME'] . '/payment/notify/payfast';
 
-        $remote_id = rand(99, 9999999);
+        $remote_id = rand( 99, 9999999 );
 
-        $payment->setRemoteId($remote_id);
+        $payment->setRemoteId( $remote_id );
         $payment->save();
 
         $merchant_id = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '10000100' : $payment_gateway_plugin->getConfiguration()['merchant_id'];
         $merchant_key = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '46f0cd694581a' : $payment_gateway_plugin->getConfiguration()['merchant_key'];
+
+        $orderId = $payment->getOrderId();
+        $order = \Drupal\commerce_order\Entity\Order::load( $orderId );
+
         $data = [
             'merchant_id' => $merchant_id,
             'merchant_key' => $merchant_key,
@@ -46,13 +50,28 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
             'notify_url' => $notifyUrl,
             'm_payment_id' => $payment->getOrderId(),
             'amount' => number_format( sprintf( "%.2f", $payment->getAmount()->getNumber() ), 2, '.', '' ),
-            'item_name' => 'Order ID: ' . $payment->getOrderId(),
-            'custom_int1' => $remote_id
+            'item_name' => 'Order ID: ' . $orderId,
         ];
+
+        foreach ( $order->getItems() as $order_item )
+        {
+            $product = $order_item->getPurchasedEntity()->getProduct();
+
+            if ( !is_null( $product->field_subscription_type->value ) && !is_null( $product->field_recurring_amount->value )
+                && !is_null( $product->field_frequency->value ) && !is_null( $product->field_cycles->value ) )
+            {
+                $data['custom_int1'] = $orderId;
+                $data['custom_str1'] = gmdate( 'Y-m-d' );
+                $data['subscription_type'] = $product->field_subscription_type->value;
+                $data['recurring_amount'] = number_format( sprintf( "%.2f", $product->field_recurring_amount->value ), 2, '.', '' );
+                $data['frequency'] = $product->field_frequency->value;
+                $data['cycles'] = $product->field_cycles->value;
+            }
+        }
 
         $pfOutput = '';
         // Create output string
-        foreach( $data as $key => $value )
+        foreach ( $data as $key => $value )
         {
             $pfOutput .= $key . '=' . urlencode( trim( $value ) ) . '&';
         }
@@ -64,13 +83,13 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
         }
         else
         {
-            $pfOutput = $pfOutput."passphrase=".urlencode( $passPhrase );
+            $pfOutput = $pfOutput . "passphrase=" . urlencode( $passPhrase );
         }
 
         $data['signature'] = md5( $pfOutput );
         $data['user_agent'] = 'Drupal Commerce 2';
 
-        return $this->buildRedirectForm($form, $form_state, $url, $data, 'post');
+        return $this->buildRedirectForm( $form, $form_state, $url, $data, 'post' );
     }
 
 }
