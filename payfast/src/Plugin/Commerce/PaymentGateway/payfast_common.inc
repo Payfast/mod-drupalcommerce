@@ -9,7 +9,7 @@ global $CONFIG;
 define( 'PF_SOFTWARE_NAME', 'drupalcommerce-8' );
 define( 'PF_SOFTWARE_VER', $CONFIG['Version'] );
 define( 'PF_MODULE_NAME', 'PayFast-drupalcommerce-8' );
-define( 'PF_MODULE_VER', '1.0.0' );
+define( 'PF_MODULE_VER', '1.1.0' );
 
 // Features
 // - PHP
