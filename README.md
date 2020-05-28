@@ -20,3 +20,5 @@ Integration instructions:
 2. In your composer.json add the following under **"extra": { "installer-paths": {**  
     
     "modules/commerce/modules": [ "payfast" ]
+
+3. run $ composer require 'payfast:^1.2.0'
