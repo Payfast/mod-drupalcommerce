@@ -54,8 +54,8 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
         {
             $product = $order_item->getPurchasedEntity()->getProduct();
 
-            if ( !is_null( $product->field_subscription_type->value ) && !is_null( $product->field_recurring_amount->value )
-                && !is_null( $product->field_frequency->value ) && !is_null( $product->field_cycles->value ) )
+            if ( isset( $product->field_subscription_type->value ) && isset( $product->field_recurring_amount->value )
+                && isset( $product->field_frequency->value ) && isset( $product->field_cycles->value ) )
             {
                 $data['custom_int1'] = $orderId;
                 $data['custom_str1'] = gmdate( 'Y-m-d' );
