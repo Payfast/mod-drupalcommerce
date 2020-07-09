@@ -24,8 +24,7 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
         $mode = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? 'sandbox' : 'www';
         $url = 'https://' . $mode . '.payfast.co.za/eng/process';
 
-        $protocol = $_SERVER['SERVER_PROTOCOL'];
-        $protocolString = strtolower( substr( $protocol, 0, strpos( $protocol, '/' ) ) );
+        $protocolString = $_SERVER['HTTPS'] == 'on'? 'https' : 'http';
         $notifyUrl = $protocolString . '://' . $_SERVER['SERVER_NAME'] . '/payment/notify/payfast';
 
         $remote_id = rand( 99, 9999999 );
