@@ -3,6 +3,7 @@ namespace Drupal\commerce_payfast\Plugin\Commerce\PaymentGateway;
 
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
+use Drupal\commerce_price\Price;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\commerce_payment\Controller;
@@ -100,7 +101,7 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
     protected function loadPaymentByRemoteId($remote_id) {
         /** @var \Drupal\commerce_payment\PaymentStorage $storage */
         $storage = $this->entityTypeManager->getStorage('commerce_payment');
-        $payment_by_remote_id = $storage->loadByProperties(['remote_id' => $remote_id]);
+        $payment_by_remote_id = $storage->loadByProperties(['order_id' => $remote_id]);
         return reset($payment_by_remote_id);
     }
 
@@ -147,7 +148,7 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
             else {
                 $passphrase = $this->getConfiguration()['passphrase'];
             }
-            
+
             // If signature different, log for debugging
             if (!pfValidSignature($pfData, $pfParamString, $passphrase)) {
                 $pfError = true;
@@ -183,10 +184,18 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
             pflog('Check status and update order');
 
             if ($pfData['payment_status'] == 'COMPLETE') {
-                $payment = $this->loadPaymentByRemoteId($pfData['custom_int1']);
-                $payment->setRemoteState($pfData['payment_status']);
-                $payment->setState('Complete');
-                $payment->setRemoteId($pfData['pf_payment_id']);
+
+                $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
+                $payment = $payment_storage->create([
+                    'state' => 'completed',
+                    'amount' => $pfData['amount_gross'],
+                    'payment_gateway' => $this->parentEntity->id(),
+                    'order_id' => $pfData['custom_int1'],
+                    'remote_id' => $pfData['pf_payment_id'],
+                    'remote_state' =>  $pfData['payment_status'],
+                ]);
+                $payment->setRefundedAmount(new Price(0.00, 'ZAR'));
+                $payment->setAmount(new Price($pfData['amount_gross'], 'ZAR'));
                 $payment->save();
             }
         }

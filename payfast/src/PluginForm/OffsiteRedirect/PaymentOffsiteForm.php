@@ -24,18 +24,15 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
         $mode = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? 'sandbox' : 'www';
         $url = 'https://' . $mode . '.payfast.co.za/eng/process';
 
-        $protocolString = $_SERVER['HTTPS'] == 'on'? 'https' : 'http';
+        $protocolString = strpos('https://', $_SERVER['HTTP_REFERER']) != false ? 'https' : 'http';
         $notifyUrl = $protocolString . '://' . $_SERVER['SERVER_NAME'] . '/payment/notify/payfast';
 
-        $remote_id = rand( 99, 9999999 );
-
-        $payment->setRemoteId( $remote_id );
+        $orderId = $payment->getOrderId();
         $payment->save();
 
         $merchant_id = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '10000100' : $payment_gateway_plugin->getConfiguration()['merchant_id'];
         $merchant_key = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '46f0cd694581a' : $payment_gateway_plugin->getConfiguration()['merchant_key'];
 
-        $orderId = $payment->getOrderId();
         $order = \Drupal\commerce_order\Entity\Order::load( $orderId );
 
         $data = [
@@ -47,6 +44,7 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
             'm_payment_id' => $payment->getOrderId(),
             'amount' => number_format( sprintf( "%.2f", $payment->getAmount()->getNumber() ), 2, '.', '' ),
             'item_name' => 'Order ID: ' . $orderId,
+            'custom_int1' => $orderId,
         ];
 
         foreach ( $order->getItems() as $order_item )
@@ -56,7 +54,6 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
             if ( isset( $product->field_subscription_type->value ) && isset( $product->field_recurring_amount->value )
                 && isset( $product->field_frequency->value ) && isset( $product->field_cycles->value ) )
             {
-                $data['custom_int1'] = $orderId;
                 $data['custom_str1'] = gmdate( 'Y-m-d' );
                 $data['subscription_type'] = $product->field_subscription_type->value;
                 $data['recurring_amount'] = number_format( sprintf( "%.2f", $product->field_recurring_amount->value ), 2, '.', '' );
