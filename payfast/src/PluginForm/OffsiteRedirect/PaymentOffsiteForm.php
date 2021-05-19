@@ -7,7 +7,6 @@ use Drupal\Core\Form\FormStateInterface;
 
 class PaymentOffsiteForm extends BasePaymentOffsiteForm
 {
-
     /**
      * {@inheritdoc}
      */
@@ -30,8 +29,13 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
         $orderId = $payment->getOrderId();
         $payment->save();
 
-        $merchant_id = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '10000100' : $payment_gateway_plugin->getConfiguration()['merchant_id'];
-        $merchant_key = $payment_gateway_plugin->getConfiguration()['mode'] == 'test' ? '46f0cd694581a' : $payment_gateway_plugin->getConfiguration()['merchant_key'];
+        $merchant_id = $payment_gateway_plugin->getConfiguration()['merchant_id'];
+        $merchant_key = $payment_gateway_plugin->getConfiguration()['merchant_key'];
+        // Use default sandbox details if no sandbox account details are entered when in test mode.
+        if (!isset($merchant_id, $merchant_key) && $payment_gateway_plugin->getConfiguration()['mode'] == 'test') {
+          $merchant_id = '10000100';
+          $merchant_key = '46f0cd694581a';
+        }
 
         $order = \Drupal\commerce_order\Entity\Order::load( $orderId );
 
@@ -45,6 +49,7 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
             'amount' => number_format( sprintf( "%.2f", $payment->getAmount()->getNumber() ), 2, '.', '' ),
             'item_name' => 'Order ID: ' . $orderId,
             'custom_int1' => $orderId,
+            'custom_str1' => 'PF_DRUPAL_9_COMMERCE_2_1.3.0',
         ];
 
         foreach ( $order->getItems() as $order_item )
@@ -54,11 +59,11 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
             if ( isset( $product->field_subscription_type->value ) && isset( $product->field_recurring_amount->value )
                 && isset( $product->field_frequency->value ) && isset( $product->field_cycles->value ) )
             {
-                $data['custom_str1'] = gmdate( 'Y-m-d' );
-                $data['subscription_type'] = $product->field_subscription_type->value;
-                $data['recurring_amount'] = number_format( sprintf( "%.2f", $product->field_recurring_amount->value ), 2, '.', '' );
-                $data['frequency'] = $product->field_frequency->value;
-                $data['cycles'] = $product->field_cycles->value;
+              $data['custom_str2'] = gmdate( 'Y-m-d' );
+              $data['subscription_type'] = $product->field_subscription_type->value;
+              $data['recurring_amount'] = number_format( sprintf( "%.2f", $product->field_recurring_amount->value ), 2, '.', '' );
+              $data['frequency'] = $product->field_frequency->value;
+              $data['cycles'] = $product->field_cycles->value;
             }
         }
 
@@ -70,7 +75,7 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm
         }
         $passPhrase = trim( $payment_gateway_plugin->getConfiguration()['passphrase'] );
 
-        if ( empty( $passPhrase ) || $payment_gateway_plugin->getConfiguration()['mode'] == 'test' )
+        if ( empty( $passPhrase ) )
         {
             $pfOutput = substr( $pfOutput, 0, -1 );
         }

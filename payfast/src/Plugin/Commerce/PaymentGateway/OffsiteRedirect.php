@@ -59,6 +59,11 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
             '#title' => $this->t('Passphrase'),
             '#default_value' => $this->configuration['passphrase'],
         ];
+      $form['debug'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Debug'),
+        '#default_value' => $this->configuration['debug'],
+      ];
         $this->entityTypeManager;
 
         return $form;
@@ -74,6 +79,7 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
             $this->configuration['merchant_id'] = $values['merchant_id'];
             $this->configuration['merchant_key'] = $values['merchant_key'];
             $this->configuration['passphrase'] = $values['passphrase'];
+          $this->configuration['debug'] = $values['debug'];
         }
     }
 
@@ -81,7 +87,7 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
      * {@inheritdoc}
      */
     public function onReturn(OrderInterface $order, Request $request) {
-        drupal_set_message('Thank you for placing your order');
+      \Drupal::messenger()->addMessage('Thank you for placing your order');
     }
 
     /**
@@ -142,13 +148,13 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
         if (!$pfError) {
             pflog('Verify security signature');
 
-            if ($this->getMode() == 'test' || $this->getConfiguration()['passphrase'] == '') {
+            if ($this->getConfiguration()['passphrase'] === '') {
                 $passphrase = null;
             }
             else {
                 $passphrase = $this->getConfiguration()['passphrase'];
             }
-
+            
             // If signature different, log for debugging
             if (!pfValidSignature($pfData, $pfParamString, $passphrase)) {
                 $pfError = true;
@@ -156,15 +162,16 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
             }
         }
 
+//// Due to the increasing popularity of cloud hosting this Security check has been removed
 //// Verify source IP (If not in debug mode)
-        if (!$pfError) {
-            pflog('Verify source IP');
-
-            if (!pfValidIP($_SERVER['REMOTE_ADDR'])) {
-                $pfError = true;
-                $pfErrMsg = PF_ERR_BAD_SOURCE_IP;
-            }
-        }
+//        if (!$pfError) {
+//            pflog('Verify source IP');
+//
+//            if (!pfValidIP($_SERVER['REMOTE_ADDR'])) {
+//                $pfError = true;
+//                $pfErrMsg = PF_ERR_BAD_SOURCE_IP;
+//            }
+//        }
 
 //// Verify data received
         if (!$pfError) {
@@ -185,18 +192,18 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
 
             if ($pfData['payment_status'] == 'COMPLETE') {
 
-                $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-                $payment = $payment_storage->create([
-                    'state' => 'completed',
-                    'amount' => $pfData['amount_gross'],
-                    'payment_gateway' => $this->parentEntity->id(),
-                    'order_id' => $pfData['custom_int1'],
-                    'remote_id' => $pfData['pf_payment_id'],
-                    'remote_state' =>  $pfData['payment_status'],
-                ]);
-                $payment->setRefundedAmount(new Price(0.00, 'ZAR'));
-                $payment->setAmount(new Price($pfData['amount_gross'], 'ZAR'));
-                $payment->save();
+              $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
+              $payment = $payment_storage->create([
+                'state' => 'completed',
+                'amount' => $pfData['amount_gross'],
+                'payment_gateway' => $this->parentEntity->id(),
+                'order_id' => $pfData['custom_int1'],
+                'remote_id' => $pfData['pf_payment_id'],
+                'remote_state' =>  $pfData['payment_status'],
+              ]);
+              $payment->setRefundedAmount(new Price(0.00, 'ZAR'));
+              $payment->setAmount(new Price($pfData['amount_gross'], 'ZAR'));
+              $payment->save();
             }
         }
 
