@@ -1,4 +1,4 @@
-#drupal_commerce2.*
+# mod-drupalcommerce
 
 Integration instructions:
  You will need a working Drupal 8 or 9 with the latest version of Drupal Commerce 2 installed.
@@ -22,3 +22,5 @@ Integration instructions:
     "modules/commerce/modules": [ "payfast" ]
 
 3. run $ composer require 'payfast:^1.3.0'
+
+Please [click here](https://payfast.io/integration/shopping-carts/drupal-commerce/) for more information concerning this module.
