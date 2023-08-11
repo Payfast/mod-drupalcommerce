@@ -1,9 +1,10 @@
 # mod-drupalcommerce
 
-Integration instructions:
- You will need a working Drupal 8 or 9 with the latest version of Drupal Commerce 2 installed.
+Installation
 
- Manually copy files
+You will need a working Drupal 8 or 9 with the latest version of Drupal Commerce 2 installed.
+
+Manually copy files
 
 1. Unzip and copy the PayFast folder to the ../modules/contrib/commerce/modules directory
 2. Log into the admin dashboard and install Commerce PayFast on the 'Extend' page.
@@ -11,7 +12,7 @@ Integration instructions:
 4. Select PayFast and configure as required.
 5. Click Save.
 
- Using composer
+Using composer
 
 1. In your composer.json add the following under **"repositories": [** 
 
