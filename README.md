@@ -15,8 +15,7 @@ Manually copy files
 Using composer
 
 1. In your composer.json add the following under **"repositories": [** 
-
-    { "type": "package", "package": { "name": "payfast", "version": "1.3.0", "type": "drupal-module", "source": { "url": "https://github.com/PayFast/mod-drupalcommerce-8.git", "type": "git", "reference": "master" } } },
+    { "type": "package", "package": { "name": "payfast", "version": "1.3.0", "type": "drupal-module", "source": { "url": "https://github.com/PayFast/mod-drupalcommerce.git", "type": "git", "reference": "master" } } },
 
 2. In your composer.json add the following under **"extra": { "installer-paths": {**  
     
