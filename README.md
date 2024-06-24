@@ -7,7 +7,7 @@ to [contact the Payfast support team](https://payfast.io/contact/) should you re
 
 ## Installation
 
-You will need a working Drupal 10 with the latest version of Drupal Commerce 2 installed.
+You will need Drupal 9.3 or 10 with the latest version of Drupal Commerce 2 installed.
 
 Manually copy files
 
