@@ -7,9 +7,9 @@ to [contact the Payfast support team](https://payfast.io/contact/) should you re
 
 ## Installation
 
-You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 installed.
+You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 installed. Use one of the options below to install.
 
-### a) Manually copy files
+### Option 1 - Manual install
 
 1. Unzip and copy the **payfast** folder to the **/modules/contrib/commerce/modules** directory
 2. Log into the admin dashboard and install Commerce Payfast on the **Extend** page.
@@ -17,7 +17,7 @@ You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 instal
 4. Select **Payfast** and configure as required.
 5. Click **Save**.
 
-### b) Using composer
+### Option 2 - Automatic install
 
 1. In your composer.json add the following under **"repositories": [**
 
