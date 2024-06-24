@@ -11,7 +11,7 @@ You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 instal
 
 ### Manually copy files
 
-1. Unzip and copy the **Payfast** folder to the _/modules/contrib/commerce/modules_ directory
+1. Unzip and copy the **payfast** folder to the _/modules/contrib/commerce/modules_ directory
 2. Log into the admin dashboard and install Commerce Payfast on the **Extend** page.
 3. Navigate to **Commerce** -> **Configuration** -> **Payment gateways** and click on **Add payment gateway**.
 4. Select **Payfast** and configure as required.
