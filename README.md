@@ -7,11 +7,11 @@ to [contact the Payfast support team](https://payfast.io/contact/) should you re
 
 ## Installation
 
-You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 installed. Use one of the options below to install.
+You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 installed.
 
 ### Option 1 - Manual install
 
-1. Unzip and copy the **payfast** folder to the **/modules/contrib/commerce/modules** directory
+1. Unzip and copy the **payfast** folder to the **/modules/contrib/commerce/modules** directory.
 2. Log into the admin dashboard and install Commerce Payfast on the **Extend** page.
 3. Navigate to **Commerce** -> **Configuration** -> **Payment gateways** and click on **Add payment gateway**.
 4. Select **Payfast** and configure as required.
