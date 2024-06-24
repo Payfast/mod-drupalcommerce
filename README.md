@@ -1,27 +1,38 @@
 # mod-drupalcommerce
 
-Installation
+## Payfast module v1.4.0 for for Drupal Commerce 2.x
 
-You will need a working Drupal 8 or 9 with the latest version of Drupal Commerce 2 installed.
+This is the Payfast module for Drupal Commerce 2.x. Please feel free
+to [contact the Payfast support team](https://payfast.io/contact/) should you require any assistance.
+
+## Installation
+
+You will need a working Drupal 10 with the latest version of Drupal Commerce 2 installed.
 
 Manually copy files
 
-1. Unzip and copy the PayFast folder to the ../modules/contrib/commerce/modules directory
-2. Log into the admin dashboard and install Commerce PayFast on the 'Extend' page.
-3. Navigate to Commerce>Configuration>Payments and click on 'new payment gateway'
-4. Select PayFast and configure as required.
+1. Unzip and copy the Payfast folder to the ../modules/contrib/commerce/modules directory
+2. Log into the admin dashboard and install Commerce Payfast on the 'Extend' page.
+3. Navigate to Commerce -> Configuration -> Payment gateways and click on 'Add payment gateway'
+4. Select Payfast and configure as required.
 5. Click Save.
 
 Using composer
 
-1. In your composer.json add the following under **"repositories": [** 
+1. In your composer.json add the following under **"repositories": [**
 
-    { "type": "package", "package": { "name": "payfast", "version": "1.3.0", "type": "drupal-module", "source": { "url": "https://github.com/PayFast/mod-drupalcommerce-8.git", "type": "git", "reference": "master" } } },
+   { "type": "package", "package": { "name": "payfast", "version": "1.4.0", "type": "drupal-module", "source": { "
+   url": "https://github.com/Payfast/mod-drupalcommerce.git", "type": "git", "reference": "master" } } },
 
-2. In your composer.json add the following under **"extra": { "installer-paths": {**  
-    
-    "modules/commerce/modules": [ "payfast" ]
+2. In your composer.json add the following under **"extra": { "installer-paths": {**
 
-3. run $ composer require 'payfast:^1.3.0'
+   "modules/commerce/modules": [ "payfast" ]
 
-Please [click here](https://payfast.io/integration/shopping-carts/drupal-commerce/) for more information concerning this module.
+3. run $ composer require 'payfast:^1.4.0'
+
+Please [click here](https://payfast.io/integration/plugins/drupal-commerce/) for more information concerning this
+module.
+
+## Collaboration
+
+Please submit pull requests with any tweaks, features or fixes you would like to share.

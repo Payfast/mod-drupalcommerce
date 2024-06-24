@@ -1,0 +1,18 @@
+Date                Version     Description
+=========================================================================
+
+2024-06-24: v1.4.0 : PHP 8.1 Upgrade.
+                     Code quality changes.
+                     Integration with Payfast Common Library.
+                     Update for Drupal 10.
+                     Bug fixes and improvements.
+
+2021-05-19: v1.3.0 : Bug fixes and improvements.
+
+2020-07-09: v1.1.2 : Bug fixes and improvements.
+
+2020-05-28: v1.1.1 : Bug fixes and improvements.
+
+2018-06-18: v1.1.0 : Bug fixes and improvements.
+
+2018-01-24: v1.0.0 : Initial Commit
