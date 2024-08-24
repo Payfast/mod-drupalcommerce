@@ -8,6 +8,5 @@ dependencies:
 
 # Information added by Drupal.org packaging script
 version: '1.4.0'
-core: '8.x'
 core_version_requirement: ^9.3 || ^10
 project: 'commerce_payfast'
