@@ -5,22 +5,17 @@ namespace Drupal\commerce_payfast\Plugin\Commerce\PaymentGateway;
 require_once __DIR__ . '/../../../../vendor/autoload.php';
 
 use Drupal;
+use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderInterface;
-use Drupal\commerce_payment;
 use Drupal\commerce_payment\Annotation\CommercePaymentGateway;
-use Drupal\commerce_payment\Controller;
+use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Drupal\commerce_payment\PaymentStorage;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
 use Drupal\commerce_price\Price;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormStateInterface;
-use Payfast\PayfastCommon\PayfastCommon;
+use Payfast\PayfastCommon\Aggregator\Request\PaymentRequest;
 use Symfony\Component\HttpFoundation\Request;
-
-define('PF_SOFTWARE_NAME', 'drupalcommerce-2.x');
-define('PF_SOFTWARE_VER', '2.32');
-define('PF_MODULE_NAME', 'Payfast-drupalcommerce-2.x');
-define('PF_MODULE_VER', '1.4.0');
 
 /**
  * Provides the Off-site Redirect payment gateway.
@@ -107,8 +102,9 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase
      */
     public function onReturn(OrderInterface $order, Request $request)
     {
-        parent::onReturn($order, $request);
-        Drupal::messenger()->addMessage('Thank you for placing your order');
+        if ($order->getState()->getId() === 'draft') {
+            throw new PaymentGatewayException('Order is still in draft state. Payment cannot be processed.');
+        }
     }
 
     /**
@@ -163,6 +159,9 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase
     {
         parent::onNotify($request);
 
+        $debug          = $this->getConfiguration()['debug'];
+        $paymentRequest = new PaymentRequest($debug);
+
         if ($this->getConfiguration()['debug'] === 1) {
             define("PF_DEBUG", true);
         }
@@ -172,29 +171,35 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase
         $pfData        = [];
         $pfHost        = (($this->getConfiguration()['mode'] == 'test') ? 'sandbox' : 'www') . '.payfast.co.za';
         $pfParamString = '';
+        $moduleInfo    = [
+            'pfSoftwareName'       => 'drupalcommerce-2.x',
+            'pfSoftwareVer'        => '3.0.0',
+            'pfSoftwareModuleName' => 'Payfast-drupalcommerce-2.x',
+            'pfModuleVer'          => '1.4.1',
+        ];
 
-        PayfastCommon::pflog('Payfast ITN call received');
+        $paymentRequest->pflog('Payfast ITN call received');
 
         // Notify Payfast that information has been received
         header('HTTP/1.0 200 OK');
         flush();
 
         // Get data sent by Payfast
-        PayfastCommon::pflog('Get posted data');
+        $paymentRequest->pflog('Get posted data');
 
         // Posted variables from ITN
-        $pfData = PayfastCommon::pfGetData();
+        $pfData = $paymentRequest->pfGetData();
 
-        PayfastCommon::pflog('Payfast Data: ' . print_r($pfData, true));
+        $paymentRequest->pflog('Payfast Data: ' . print_r($pfData, true));
 
         if ($pfData === false) {
             $pfError  = true;
-            $pfErrMsg = PayfastCommon::PF_ERR_BAD_ACCESS;
+            $pfErrMsg = $paymentRequest::PF_ERR_BAD_ACCESS;
         }
 
         // Verify security signature
         if (!$pfError) {
-            PayfastCommon::pflog('Verify security signature');
+            $paymentRequest->pflog('Verify security signature');
 
             if ($this->getConfiguration()['passphrase'] === '') {
                 $passphrase = null;
@@ -203,21 +208,21 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase
             }
 
             // If signature different, log for debugging
-            if (!PayfastCommon::pfValidSignature($pfData, $pfParamString, $passphrase)) {
+            if (!$paymentRequest->pfValidSignature($pfData, $pfParamString, $passphrase)) {
                 $pfError  = true;
-                $pfErrMsg = PayfastCommon::PF_ERR_INVALID_SIGNATURE;
+                $pfErrMsg = $paymentRequest::PF_ERR_INVALID_SIGNATURE;
             }
         }
 
         // Verify data received
         if (!$pfError) {
-            PayfastCommon::pflog('Verify data received');
+            $paymentRequest->pflog('Verify data received');
 
-            $pfValid = PayfastCommon::pfValidData($pfHost, $pfParamString);
+            $pfValid = $paymentRequest->pfValidData($moduleInfo, $pfHost, $pfParamString);
 
             if (!$pfValid) {
                 $pfError  = true;
-                $pfErrMsg = PayfastCommon::PF_ERR_BAD_ACCESS;
+                $pfErrMsg = $paymentRequest::PF_ERR_BAD_ACCESS;
             }
         }
 
@@ -235,49 +240,50 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase
      */
     public function processOrder($pfError, $pfData, $pfErrMsg): void
     {
-        // Check status and update order
+        $debug          = $this->getConfiguration()['debug'];
+        $paymentRequest = new PaymentRequest($debug);
+
         if (!$pfError) {
-            PayfastCommon::pflog('Check status and update order');
+            $paymentRequest->pflog('Check status and update order');
 
-            if ($pfData['payment_status'] == 'COMPLETE') {
-                $message = '@message';
+            if ($pfData['payment_status'] == 'COMPLETE' && isset($pfData['custom_int1'])) {
+                $order_id = $pfData['custom_int1'];
 
-                try {
-                    $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-                } catch (Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException $e) {
-                    Drupal::logger('your_module')->error(
-                        'Invalid plugin definition exception: @message',
-                        [$message => $e->getMessage()]
-                    );
-                } catch (Drupal\Component\Plugin\Exception\PluginNotFoundException $e) {
-                    Drupal::logger('your_module')->error(
-                        'Plugin not found exception: @message',
-                        [$message => $e->getMessage()]
-                    );
-                }
-                $payment = $payment_storage->create([
-                                                        'state'           => 'completed',
-                                                        'amount'          => $pfData['amount_gross'],
-                                                        'payment_gateway' => $this->parentEntity->id(),
-                                                        'order_id'        => $pfData['custom_int1'],
-                                                        'remote_id'       => $pfData['pf_payment_id'],
-                                                        'remote_state'    => $pfData['payment_status'],
-                                                    ]);
-                $payment->setRefundedAmount(new Price('0.00', 'ZAR'));
-                $payment->setAmount(new Price($pfData['amount_gross'], 'ZAR'));
-                try {
-                    $payment->save();
-                } catch (Drupal\Core\Entity\EntityStorageException $e) {
-                    Drupal::logger('your_module')->error(
-                        'Entity storage exception: @message',
-                        [$message => $e->getMessage()]
-                    );
+                // Load the order
+                $order = Order::load($order_id);
+                if ($order) {
+                    $message = '@message';
+
+                    try {
+                        $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
+
+                        $payment = $payment_storage->create([
+                                                                'state'           => 'completed',
+                                                                'amount'          => $pfData['amount_gross'],
+                                                                'payment_gateway' => $this->parentEntity->id(),
+                                                                'order_id'        => $order_id,
+                                                                'remote_id'       => $pfData['pf_payment_id'],
+                                                                'remote_state'    => $pfData['payment_status'],
+                                                            ]);
+                        $payment->setRefundedAmount(new Price('0.00', 'ZAR'));
+                        $payment->setAmount(new Price($pfData['amount_gross'], 'ZAR'));
+
+                        $payment->save();
+
+                        // Mark order as completed in state storage
+                        \Drupal::state()->set('payfast_order_notified_' . $order_id, true);
+                    } catch (EntityStorageException $e) {
+                        Drupal::logger('your_module')->error(
+                            'Entity storage exception: @message',
+                            [$message => $e->getMessage()]
+                        );
+                    }
                 }
             }
         }
 
         if ($pfError) {
-            PayfastCommon::pflog('Error: ' . $pfErrMsg);
+            $paymentRequest->pflog('Error: ' . $pfErrMsg);
         }
     }
 }
