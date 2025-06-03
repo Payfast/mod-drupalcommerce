@@ -1,6 +1,6 @@
 # mod-drupalcommerce
 
-## Payfast module v1.4.0 for for Drupal Commerce 2.x
+## Payfast module v1.4.1 for for Drupal Commerce 2.x
 
 This is the Payfast module for Drupal Commerce 2.x. Please feel free
 to [contact the Payfast support team](https://payfast.io/contact/) should you require any assistance.
@@ -22,7 +22,7 @@ You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 instal
 1. In your composer.json add the following under **"repositories": [**
 
 ```
-{ "type": "package", "package": { "name": "payfast", "version": "1.4.0", "type": "drupal-module", "source": { "
+{ "type": "package", "package": { "name": "payfast", "version": "1.4.1", "type": "drupal-module", "source": { "
    url": "https://github.com/Payfast/mod-drupalcommerce.git", "type": "git", "reference": "master" } } },
 ```
 
@@ -34,7 +34,7 @@ You will need Drupal 9 or 10 with the latest version of Drupal Commerce 2 instal
 
 3. Require the module using composer.
 
-```composer require 'payfast:^1.4.0'```
+```composer require 'payfast:^1.4.1'```
 
 Please [click here](https://payfast.io/integration/plugins/drupal-commerce/) for more information concerning this
 module.
